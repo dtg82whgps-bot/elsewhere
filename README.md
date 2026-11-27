@@ -38,6 +38,46 @@ For a browser preview, set `ALLOWED_ORIGINS=http://localhost:8081` on the server
 
 Without a key, you can run the same HTTP app against a scripted model for UI work: `cd server && npx tsx test/mock-server.ts` (port 8080; its output is placeholder text).
 
+## Run the full version on your phone (your computer + Expo Go)
+
+This runs the real AI analysis without deploying anything. Your computer runs the API, and your phone runs the app through Expo Go. Both need to be on the same Wi-Fi.
+
+**You need:** Node.js 20.11 or newer, an Anthropic API key with billing enabled (console.anthropic.com), and Expo Go installed on your phone (update it from the App Store or Google Play first).
+
+1. **Start the API** (terminal 1):
+   ```bash
+   cd server
+   npm install
+   cp .env.example .env          # Windows: copy .env.example .env
+   ```
+   Open `.env` and set `ANTHROPIC_API_KEY=` to your key. Then:
+   ```bash
+   npm run smoke                 # optional: one real research and analysis per mode; a few cents
+   npm run dev                   # leave this running; it prints "listening on :8080"
+   ```
+
+2. **Find your computer's address on the Wi-Fi.** macOS: `ipconfig getifaddr en0`. Windows: `ipconfig`, the IPv4 address. Linux: `hostname -I`. It looks like `192.168.1.23`.
+
+3. **Start the app** (terminal 2):
+   ```bash
+   cd mobile
+   npm install
+   EXPO_PUBLIC_API_URL=http://192.168.1.23:8080 npx expo start
+   ```
+   Windows PowerShell: `$env:EXPO_PUBLIC_API_URL="http://192.168.1.23:8080"; npx expo start`
+
+4. **Open it on your phone.** Scan the QR code shown in the terminal: with Expo Go on Android, or with the Camera app on iPhone.
+
+5. **Try it:** type "What if I moved to New York?", accept the consent screen, choose an option, wait one to three minutes, then switch modes and ask a follow-up question.
+
+**If it says "could not reach the analysis service":**
+- Check that the address is your computer's current Wi-Fi address and that terminal 1 is still running.
+- Allow Node through the firewall when prompted (Windows), or allow incoming connections on port 8080.
+- Make sure the phone is on the same Wi-Fi and not on mobile data or a VPN.
+- iPhone sometimes blocks plain `http://` addresses. Use a secure tunnel instead: run `npx cloudflared tunnel --url http://localhost:8080` in a third terminal, copy the `https://…trycloudflare.com` address it prints, and use that as `EXPO_PUBLIC_API_URL` when you restart step 3.
+
+Expo Go is for testing only. Store builds are covered in `docs/STORE_READINESS.md`.
+
 ## Tests and checks
 
 ```bash

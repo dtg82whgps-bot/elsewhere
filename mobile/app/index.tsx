@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { Button, Card } from "../src/components/ui";
 import { API_URL } from "../src/config";
 import { compactProfile, loadProfile } from "../src/storage";
@@ -20,10 +20,16 @@ export default function HomeScreen() {
   const [decision, setDecision] = useState("");
   const [hasProfile, setHasProfile] = useState(false);
 
-  useEffect(() => {
-    // Refresh whenever this screen regains focus would be nicer, but a mount read is sufficient here.
-    loadProfile().then((p) => setHasProfile(Boolean(compactProfile(p))));
-  }, []);
+  // Re-read the profile whenever this screen gains focus, so edits on the About you screen show up here.
+  useFocusEffect(
+    useCallback(() => {
+      let alive = true;
+      loadProfile().then((p) => alive && setHasProfile(Boolean(compactProfile(p))));
+      return () => {
+        alive = false;
+      };
+    }, []),
+  );
 
   const ready = decision.trim().length >= 5;
 
