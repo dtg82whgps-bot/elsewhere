@@ -40,7 +40,7 @@ async function post<T>(path: string, body: unknown, timeoutMs = ANALYSIS_TIMEOUT
       aborted ? "timeout" : "network",
       aborted
         ? "That took longer than expected. Please try again."
-        : "Elsewhere could not reach the analysis service. Check your connection and try again.",
+        : "Elsewhere could not reach the analysis service. Check that the server is running on your computer and that the address is correct, then try again.",
       0,
     );
   } finally {

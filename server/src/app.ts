@@ -17,6 +17,7 @@ import { generateAnalysis } from "./engine.js";
 import { answerFollowUp } from "./followup.js";
 import { getMode } from "./modes.js";
 import { makeSigner, runResearch } from "./research.js";
+import { CRISIS_MESSAGE, isCrisis } from "./safety.js";
 import {
   AnalysisRequestSchema,
   FollowUpRequestSchema,
@@ -97,6 +98,7 @@ export function createApp(options: AppOptions): express.Express {
   app.post("/v1/research", rateLimit("research", limits.research, windowMs), async (req, res) => {
     const parsed = ResearchRequestSchema.safeParse(req.body);
     if (!parsed.success) throw new HttpError(400, "invalid_request", firstIssue(parsed.error));
+    if (isCrisis(parsed.data.context.decision)) throw new HttpError(422, "crisis", CRISIS_MESSAGE);
     const brief = await runResearch(client, parsed.data.context);
     res.json({ brief, signature: signer.sign(brief) });
   });
@@ -105,6 +107,7 @@ export function createApp(options: AppOptions): express.Express {
     const parsed = AnalysisRequestSchema.safeParse(req.body);
     if (!parsed.success) throw new HttpError(400, "invalid_request", firstIssue(parsed.error));
     const { context, mode: modeId } = parsed.data;
+    if (isCrisis(context.decision)) throw new HttpError(422, "crisis", CRISIS_MESSAGE);
 
     let brief: ResearchBrief;
     let signature: string;
@@ -128,6 +131,7 @@ export function createApp(options: AppOptions): express.Express {
     const parsed = FollowUpRequestSchema.safeParse(req.body);
     if (!parsed.success) throw new HttpError(400, "invalid_request", firstIssue(parsed.error));
     const { context, mode, analysis, research, history, question } = parsed.data;
+    if (isCrisis(question) || isCrisis(context.decision)) throw new HttpError(422, "crisis", CRISIS_MESSAGE);
     if (!signer.verify(research.brief, research.signature)) {
       throw new HttpError(400, "research_invalid", "The research for this decision has expired. Please try again.");
     }

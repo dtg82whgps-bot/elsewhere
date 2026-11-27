@@ -4,6 +4,7 @@ import { router, useFocusEffect } from "expo-router";
 import { Button, Card } from "../src/components/ui";
 import { API_URL } from "../src/config";
 import { compactProfile, loadProfile } from "../src/storage";
+import { safetyLevel } from "../src/safety";
 import { colors, font, maxContentWidth, radius, serif, space } from "../src/theme";
 
 const MAX = 500;
@@ -31,7 +32,8 @@ export default function HomeScreen() {
     }, []),
   );
 
-  const ready = decision.trim().length >= 5;
+  const level = safetyLevel(decision);
+  const ready = decision.trim().length >= 5 && level !== "crisis";
 
   const start = () => {
     if (!ready) return;
@@ -49,6 +51,22 @@ export default function HomeScreen() {
           <Card style={{ backgroundColor: colors.warmSoft, borderColor: colors.warmSoft }}>
             <Text style={font.small}>
               This build is not connected to the analysis service. Set EXPO_PUBLIC_API_URL for this build profile.
+            </Text>
+          </Card>
+        ) : null}
+
+        {level === "crisis" ? (
+          <Card style={{ backgroundColor: colors.negativeSoft, borderColor: colors.negativeSoft }} accessibilityLabel="Support">
+            <Text style={[font.title, { color: colors.negative }]}>You don't have to handle this alone</Text>
+            <Text style={font.body}>
+              Elsewhere can't help with this, but people can right now. In the US, call or text 988 (Suicide & Crisis Lifeline), any time. Outside the US, see findahelpline.com. If you might hurt yourself, call your local emergency number.
+            </Text>
+          </Card>
+        ) : null}
+        {level === "support" ? (
+          <Card style={{ backgroundColor: colors.warmSoft, borderColor: colors.warmSoft }}>
+            <Text style={font.small}>
+              That sounds heavy. If you're struggling, you can talk to someone any time: in the US, call or text 988. Outside the US, see findahelpline.com.
             </Text>
           </Card>
         ) : null}

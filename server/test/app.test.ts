@@ -119,3 +119,18 @@ test("signature helper agrees with the server's own signatures", async () => {
   assert.equal(makeSigner(KEY).verify(first.brief, first.signature), true);
   assert.equal(makeSigner("other").verify(first.brief, first.signature), false);
 });
+
+test("crisis wording is blocked before any model call", async () => {
+  const before = calls.length;
+  const res = await post("/v1/research", { context: { decision: "I want to end my life, I can't do this anymore" } });
+  assert.equal(res.status, 422);
+  assert.equal(((await res.json()) as any).error.code, "crisis");
+  const res2 = await post("/v1/analyze", { context: { decision: "I think I want to kill myself" }, mode: "futures" });
+  assert.equal(res2.status, 422);
+  assert.equal(calls.length, before, "no model call for crisis text");
+});
+
+test("ordinary decisions are not blocked by the safety check", async () => {
+  const res = await post("/v1/research", { context: { decision: "What if I moved to Miami for a job?" } });
+  assert.equal(res.status, 200);
+});
